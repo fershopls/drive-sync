@@ -2,7 +2,7 @@ import httplib2
 from oauth2client import client
 from apiclient.discovery import build
 
-flow = client.flow_from_clientsecrets('client_secret.json',
+flow = client.flow_from_clientsecrets('../client_secret.json',
                                       scope='https://www.googleapis.com/auth/calendar',
                                       redirect_uri='http://localhost/')
 
