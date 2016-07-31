@@ -3,7 +3,7 @@ from oauth2client import client
 from apiclient.discovery import build
 
 flow = client.flow_from_clientsecrets('../client_secret.json',
-                                      scope='https://www.googleapis.com/auth/calendar',
+                                      scope='https://www.googleapis.com/auth/drive',
                                       redirect_uri='http://localhost/')
 
 auth_uri = flow.step1_get_authorize_url()
