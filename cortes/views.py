@@ -17,6 +17,7 @@ import httplib2
 from oauth2client import client
 from apiclient.discovery import build
 from oauth2client.contrib.django_util.storage import DjangoORMStorage as Storage
+from googleapiclient.http import MediaFileUpload
 from casalamat import settings
 
 if False:
