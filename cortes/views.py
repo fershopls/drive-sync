@@ -51,10 +51,11 @@ flow = client.flow_from_clientsecrets(settings.GOOGLE_OAUTH2_CLIENT_SECRETS_JSON
 def config_view (request):
     storage = Storage(models.CredentialsModel, 'id', request.user, 'credential')
     credential = storage.get()
+    access_granted = True
+    drive_uri = ""
     if credential is None or credential.invalid == True:
+        access_granted = False
         drive_uri = flow.step1_get_authorize_url()
-    else:
-        access_granted = True
         
     return render(request, 'config.html', {'oauth_drive_uri':drive_uri,'access_granted':access_granted})
 
