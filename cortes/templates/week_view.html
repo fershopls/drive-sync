@@ -32,7 +32,21 @@
            </div>
        </div>
     {% endfor %}
-
+</div>
+<hr>
+<div class="container text-right">
+    <form action="{% url 'week_export' %}" method="post">
+       <div class="row">
+           <div class="four columns">
+               <input placeholder="Valor del Dolar" name="usd_value" class="u-full-width" type="text" required>
+           </div>
+           <div class="eight columns">
+                <input class="button-primary u-full-width" type="submit" value="Upload to Google Drive">
+           </div>
+       </div>
+        <input type="hidden" name="week_id" value="{{ week_id }}">
+        {% csrf_token %}
+    </form>
 </div>
 
 <script>

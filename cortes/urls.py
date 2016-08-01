@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     url(r'^$', views.home, name='index'),
     url(r'^week/(?P<week_id>[0-9]+)$', views.week_view, name='week_view'),
+    url(r'^week/export$', views.week_export, name='week_export'),
+    
     url(r'^booking/(?P<book_nr>[0-9]+)$', views.booking_view, name='booking_view'),
     url(r'^import$', views.import_view, name='import_view'),
     url(r'^import/process$', views.import_process, name='import_process'),

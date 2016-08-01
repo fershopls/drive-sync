@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import os
 import csv
 import re
@@ -42,6 +45,87 @@ def week_view (request, week_id=None):
     week_bookings = models.Booking.objects.filter(departure__range=[week_begin, week_end])
     
     return render(request, 'week_view.html', {'week_id': week_id, 'week_bookings': week_bookings})
+
+def week_export (request):
+    week_id = request.POST.get('week_id')
+    usd_value = float(request.POST.get('usd_value'))
+    
+    week_begin = datetime.strptime(timezone.now().strftime("%Y")+':'+week_id+'-0', "%Y:%W-%w")
+    week_end = datetime.strptime(timezone.now().strftime("%Y")+':'+str(int(week_id)+1)+'-0', "%Y:%W-%w")-timedelta(days=1)
+    week_begin = week_begin.strftime("%Y-%m-%d")
+    week_end = week_end.strftime("%Y-%m-%d")
+    week_bookings = models.Booking.objects.filter(departure__range=[week_begin, week_end])
+    
+    # Create the HttpResponse object with the appropriate CSV header.
+    #response = HttpResponse(content_type='text/plain')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="W%s_%s.csv"' % (week_id,week_end)
+
+    concepts = models.Concept.objects.all()
+    currencies = models.Currency.objects.all()
+    writer = csv.writer(response)
+    writer.writerow([])
+    writer.writerow(["","WEEK NUMBER",week_id])
+    writer.writerow(["","USD VALUE",usd_value])
+    writer.writerow([])
+    headers = ["Book_nr","Book_date","Booker_name","Guest_names","Arrival","Departure","Status","Total","Commission","Subtotal",
+               "","Folio Registro"]
+    for concept in concepts:
+        headers.append(concept.name)
+    
+    headers = headers + ["Subtotal",""]
+    
+    for currency in currencies:
+        headers.append(currency.slug.upper())
+    
+    headers = headers + ["Gran Total", "Por Recibir"]
+    
+    writer.writerow(headers)
+    for b in week_bookings:
+        total_mxn = b.total*usd_value
+        row = [
+            b.book_nr,
+            b.book_date,
+            b.booker_name.encode('utf8'),
+            b.guest_names.encode('utf8'),
+            b.arrival,
+            b.departure,
+            b.status.encode('utf8'),
+            b.total,
+            b.commission,
+            total_mxn,
+            "",
+            b.folio if b.folio else "none"
+        ]
+        concept_total = 0
+        for concept in concepts:
+            service = b.service_set.filter(concept__id=concept.id).first()
+            if service:
+                row.append(service.value)
+                concept_total += service.value
+            else:
+                row.append("0")
+        row =  row + [concept_total, ""]
+        
+        payment_total = 0
+        for currency in currencies:
+            payment = b.payment_set.filter(currency__id=currency.id).first()
+            if payment:
+                row.append(payment.value)
+                payment_total += payment.value if payment.currency.slug != 'usd' else payment.value*usd_value
+            else:
+                row.append("0")
+        
+        grand_total = total_mxn+concept_total
+        row.append(grand_total)
+        row.append(grand_total - payment_total)
+        
+        writer.writerow(row)
+    
+
+    return response
+
+
 
 import_path = '%s/static/upload.csv' % os.path.dirname(os.path.abspath(__file__))
 def import_process (request):

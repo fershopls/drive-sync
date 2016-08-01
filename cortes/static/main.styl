@@ -12,6 +12,10 @@ html, body
     display none
 .nm
     margin 0!important
+hr
+    border 1px solid #e7e7e7
+    border-bottom none
+    margin 25px 0
 h4
     text-transform uppercase
     font-weight 900
@@ -52,10 +56,11 @@ table
     margin 20px 0
     background-color #fafafa
     font-weight medium
-    .header
-        margin-bottom 10px
+    &.header, .header
         text-transform uppercase
         font-weight bold
+    .header
+        margin-bottom 10px
         padding-bottom 10px
         border-bottom 2px solid rgba(white,0.7)
     .fa

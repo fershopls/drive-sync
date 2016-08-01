@@ -18,10 +18,11 @@ class Booking (models.Model):
     total = models.SmallIntegerField()
     commission = models.FloatField(default=0)
     
+    folio = models.SmallIntegerField(blank=True, null=True)
     internal_notes = models.TextField(blank=True)
     
-    def __str__ (self):
-        return "[%s] %s" % (self.book_nr, self.booker_name)
+    def __unicode__ (self):
+        return "%s %s" % (self.book_nr, self.booker_name)
     
 class Concept (models.Model):
     name = models.CharField(max_length=200)
@@ -37,7 +38,6 @@ class Currency (models.Model):
     
 class Service (models.Model):
     booking = models.ForeignKey(Booking)
-    folio = models.SmallIntegerField()
     concept = models.ForeignKey(Concept)
     currency = models.ForeignKey(Currency)
     value = models.SmallIntegerField()
@@ -52,3 +52,17 @@ class Payment (models.Model):
     
     def __str__(self):
         return "%s $%s %s" % (self.booking, self.value, self.currency.slug)
+    
+class Export (models.Model):
+    week_number = models.SmallIntegerField()
+    file_id = models.CharField(max_length=200)
+    file_path = models.CharField(max_length=200)
+    usd_value = models.SmallIntegerField()
+    export_date = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return "W%s #%s" % (self.week_number, self.file_id)
+
+
+
+

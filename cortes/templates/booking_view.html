@@ -40,22 +40,31 @@
             </tr>
             <tr>
                 <th>Total</th>
-                <td>{{ booking.total }}</td>
+                <td>${{ booking.total }}</td>
             </tr>
             <tr>
                 <th>Commission</th>
-                <td>{{ booking.commission }}</td>
+                <td>${{ booking.commission }}</td>
             </tr>
         </table>
        </div>
        <div class="one-half column">
            <h4>Payments</h4>
-           <div class="yellow message">
-               <div class="header">
-                   Payment #1
-               </div>
-               This person has deposit $400 box in cash.
+           {% for payment in booking.payment_set.all %}
+           <div class="success message header">
+               ${{ payment.value }} {{ payment.currency.slug }}
            </div>
+           {% endfor %}
+           
+           <h4>Services</h4>
+           {% for service in booking.service_set.all %}
+           <div class="yellow message">
+                <div class="header">
+                    {{ service.concept.name }} #{{ service.folio }}
+                </div>
+                ${{ service.value }} {{ service.currency.slug }}
+           </div>
+           {% endfor %}
        </div>
    </div>
 </div>
