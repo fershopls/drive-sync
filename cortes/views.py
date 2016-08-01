@@ -52,10 +52,9 @@ def config_view (request):
     storage = Storage(models.CredentialsModel, 'id', request.user, 'credential')
     credential = storage.get()
     access_granted = True
-    drive_uri = ""
+    drive_uri = flow.step1_get_authorize_url()
     if credential is None or credential.invalid == True:
         access_granted = False
-        drive_uri = flow.step1_get_authorize_url()
         
     return render(request, 'config.html', {'oauth_drive_uri':drive_uri,'access_granted':access_granted})
 
