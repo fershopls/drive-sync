@@ -42,10 +42,10 @@ def accounts_login (request):
 def home (request):
     return redirect(reverse('week_view', kwargs={'week_id':datetime.now().strftime('%U')}))
 
-
+domain = "fershopls.pythonanywhere.com"
 flow = client.flow_from_clientsecrets(settings.GOOGLE_OAUTH2_CLIENT_SECRETS_JSON,
                                   scope='https://www.googleapis.com/auth/drive', 
-                                  redirect_uri='http://'+request.META['HTTP_HOST']+'/config/access')
+                                  redirect_uri='http://'+domain+'/config/access')
 
 @login_required
 def config_view (request):
