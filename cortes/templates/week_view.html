@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+
+<h1 class="text-center">Week {{ week_id }}</h1>
+
+<div class="container row-table row-hovered">
+   <div class="row-header row">
+       <div class="two columns">ID</div>
+       <div class="four columns">Booker Name</div>
+       <div class="two columns">Arrival</div>
+       <div class="two columns">Departure</div>
+       <div class="two columns">Total</div>
+   </div>
+    {% for booking in week_bookings %}
+       <div class=row data-booking-id='{{ booking.book_nr }}'>
+           <div class="two columns">
+            {{ booking.book_nr }}
+           </div>
+           <div class="four columns">
+            {{ booking.booker_name }}
+           </div>
+           <div class="two columns">
+            {{ booking.arrival | date:"Y-m-d" }}
+           </div>
+           <div class="two columns">
+            {{ booking.departure | date:"Y-m-d" }}
+           </div>
+           <div class="two columns">
+            ${{ booking.total }}
+           </div>
+       </div>
+    {% endfor %}
+
+</div>
+
+<script>
+$('[data-booking-id]').on('click', function(){
+    window.location = "{% url 'booking_view' book_nr=123 %}".replace('123','') + $(this).attr('data-booking-id')
+})
+</script>
+
+{% endblock content %}

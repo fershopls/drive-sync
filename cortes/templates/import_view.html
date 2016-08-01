@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+
+<h1 class="text-center">Import from Booking</h1>
+
+<div class="container">
+    
+    {% if success %}
+    <div class="success message">
+        <i class="fa fa-check-circle"></i>
+        File uploaded successfully! {{ bookings_sync }} bookings synchronized
+    </div>
+    {% elif success == False %}
+    <div class="error message">
+        <i class="fa fa-times"></i>
+        File not uploaded
+    </div>
+    {% endif %}
+    
+   <form class="text-center" action="{% url 'import_view' %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Upload File">
+        <textarea name="content" placeholder="Paste here.." class="u-full-width" style="height:500px"></textarea>
+    </form>
+
+</div>
+
+{% endblock content %}

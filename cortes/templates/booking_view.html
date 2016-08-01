@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+
+
+{% block content %}
+
+<h1 class="text-center">{{ booking.booker_name }}</h1>
+
+<div class="container">
+   <div class="row">
+       <div class="one-half column">
+        <h4 class='nm'>Booking</h4>
+        <table class="u-full-width">
+            <tr>
+                <th>Booking Id</th>
+                <td>{{ booking.book_nr}}</td>
+            </tr>
+            <tr>
+                <th>Book Date</th>
+                <td>{{ booking.book_date }}</td>
+            </tr>
+            <tr>
+                <th>Booker Name</th>
+                <td>{{ booking.booker_name }}</td>
+            </tr>
+            <tr>
+                <th>Guest Names</th>
+                <td>{{ booking.guest_names }}</td>
+            </tr>
+            <tr>
+                <th>Arrival</th>
+                <td>{{ booking.arrival }}</td>
+            </tr>
+            <tr>
+                <th>Departure</th>
+                <td>{{ booking.departure }}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ booking.status }}</td>
+            </tr>
+            <tr>
+                <th>Total</th>
+                <td>{{ booking.total }}</td>
+            </tr>
+            <tr>
+                <th>Commission</th>
+                <td>{{ booking.commission }}</td>
+            </tr>
+        </table>
+       </div>
+       <div class="one-half column">
+           <h4>Payments</h4>
+           <div class="yellow message">
+               <div class="header">
+                   Payment #1
+               </div>
+               This person has deposit $400 box in cash.
+           </div>
+       </div>
+   </div>
+</div>
+
+
+{% endblock content %}
