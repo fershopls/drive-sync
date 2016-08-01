@@ -186,7 +186,7 @@ def week_export (request):
     media = MediaFileUpload(file_path, mimetype='text/csv', resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
     
-    return redirect(reverse('week_view', kwargs={week_id:week_id}))
+    return redirect(reverse('week_view', kwargs={'week_id':week_id}))
     
 
 import_path = '%s/static/upload.csv' % os.path.dirname(os.path.abspath(__file__))
