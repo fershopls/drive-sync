@@ -1,2 +1,2 @@
 # drive-sync
-Upload files to drive by oAuth2
+Upload files to drive using django and google-api-python-client.
