@@ -53,24 +53,10 @@ def config_view (request):
     credential = storage.get()
     if credential is None or credential.invalid == True:
         drive_uri = flow.step1_get_authorize_url()
-        return render(request, 'config.html', {'oauth_drive_uri':drive_uri})
     else:
-        http = httplib2.Http()
-        http = credential.authorize(http)
-        service = build("drive", "v3", http=http)
+        access_granted = True
         
-        results = service.files().list(
-            pageSize=10,fields="nextPageToken, files(id, name)").execute()
-        
-        items = results.get('files', [])
-        if not items:
-            print('No files found.')
-        else:
-            print('Files:')
-            for item in items:
-                print('{0} ({1})'.format(item['name'], item['id']))
-        
-        return JsonResponse(items)
+    return render(request, 'config.html', {'oauth_drive_uri':drive_uri,'access_granted':access_granted})
 
 
 @login_required
@@ -78,7 +64,7 @@ def config_access (request):
     credential = flow.step2_exchange(request.REQUEST.get('code'))
     storage = Storage(models.CredentialsModel, 'id', request.user, 'credential')
     storage.put(credential)
-    return HttpResponseRedirect("/config")
+    return redirect(reverse('config_view'))
 
 
 
@@ -114,7 +100,7 @@ def week_export (request):
     week_bookings = models.Booking.objects.filter(departure__range=[week_begin, week_end])
     
     # Create the HttpResponse object with the appropriate CSV header.
-    file_path = os.path.join(os.path.dirname(__file__), '..', "W%s_%s.csv" % (week_id,week_end))
+    file_path = os.path.join(os.path.dirname(__file__), '..','export', "W%s_%s.csv" % (week_id,week_end))
 
     concepts = models.Concept.objects.all()
     currencies = models.Currency.objects.all()
@@ -200,7 +186,7 @@ def week_export (request):
     media = MediaFileUpload(file_path, mimetype='text/csv', resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
     
-    return HttpResponse(file.get('id') + " | " + file_path)
+    return redirect(reverse('week_view', kwargs={week_id:week_id}))
     
 
 import_path = '%s/static/upload.csv' % os.path.dirname(os.path.abspath(__file__))

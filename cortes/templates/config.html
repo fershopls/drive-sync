@@ -6,6 +6,11 @@
 <h1 class="text-center">System Configuration</h1>
 <hr>
 <div class="container">
+    {% if access_granted %}
+    <div class="success message">
+        An account has been sync successfully.
+    </div>
+    {% endif %}
    <div class="row">
         <div class="six columns">
             <strong>Sync with Google Drive</strong>
