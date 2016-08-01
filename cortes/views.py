@@ -113,76 +113,94 @@ def week_export (request):
     week_bookings = models.Booking.objects.filter(departure__range=[week_begin, week_end])
     
     # Create the HttpResponse object with the appropriate CSV header.
-    #response = HttpResponse(content_type='text/plain')
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="W%s_%s.csv"' % (week_id,week_end)
+    file_name = "W%s_%s.csv" % (week_id,week_end)
+    file_path = os.path.join(os.path.dirname(__file__), '..', file_name)
 
     concepts = models.Concept.objects.all()
     currencies = models.Currency.objects.all()
-    writer = csv.writer(response)
-    writer.writerow([])
-    writer.writerow(["","WEEK NUMBER",week_id])
-    writer.writerow(["","USD VALUE",usd_value])
-    writer.writerow([])
-    headers = ["Book_nr","Book_date","Booker_name","Guest_names","Arrival","Departure","Status","Total","Commission","Subtotal",
-               "","Folio Registro"]
-    for concept in concepts:
-        headers.append(concept.name)
     
-    headers = headers + ["Subtotal",""]
-    
-    for currency in currencies:
-        headers.append(currency.slug.upper())
-    
-    headers = headers + ["Gran Total", "Por Recibir","","Notas"]
-    
-    writer.writerow(headers)
-    for b in week_bookings:
-        total_mxn = b.total*usd_value
-        row = [
-            b.book_nr,
-            b.book_date,
-            b.booker_name.encode('utf8'),
-            b.guest_names.encode('utf8'),
-            b.arrival,
-            b.departure,
-            b.status.encode('utf8'),
-            b.total,
-            b.commission,
-            total_mxn,
-            "",
-            b.folio
-        ]
-        concept_total = 0
+    with open(file_path, 'wb') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',', quotechar='"')
+        writer.writerow([])
+        writer.writerow(["","WEEK NUMBER",week_id])
+        writer.writerow(["","USD VALUE",usd_value])
+        writer.writerow([])
+        headers = ["Book_nr","Book_date","Booker_name","Guest_names","Arrival","Departure","Status","Total","Commission","Subtotal",
+                   "","Folio Registro"]
         for concept in concepts:
-            service = b.service_set.filter(concept__id=concept.id).first()
-            if service:
-                row.append(service.value)
-                concept_total += service.value
-            else:
-                row.append("0")
-        row =  row + [concept_total, ""]
-        
-        payment_total = 0
+            headers.append(concept.name)
+
+        headers = headers + ["Subtotal",""]
+
         for currency in currencies:
-            payment = b.payment_set.filter(currency__id=currency.id).first()
-            if payment:
-                row.append(payment.value)
-                payment_total += payment.value if payment.currency.slug != 'usd' else payment.value*usd_value
-            else:
-                row.append("0")
-        
-        grand_total = total_mxn+concept_total
-        row.append(grand_total)
-        row.append(grand_total - payment_total)
-        row.append(b.notes)
-        
-        writer.writerow(row)
+            headers.append(currency.slug.upper())
+
+        headers = headers + ["Gran Total", "Por Recibir","","Notas"]
+
+        writer.writerow(headers)
+        for b in week_bookings:
+            total_mxn = b.total*usd_value
+            row = [
+                b.book_nr,
+                b.book_date,
+                b.booker_name.encode('utf8'),
+                b.guest_names.encode('utf8'),
+                b.arrival,
+                b.departure,
+                b.status.encode('utf8'),
+                b.total,
+                b.commission,
+                total_mxn,
+                "",
+                b.folio
+            ]
+            concept_total = 0
+            for concept in concepts:
+                service = b.service_set.filter(concept__id=concept.id).first()
+                if service:
+                    row.append(service.value)
+                    concept_total += service.value
+                else:
+                    row.append("0")
+            row =  row + [concept_total, ""]
+
+            payment_total = 0
+            for currency in currencies:
+                payment = b.payment_set.filter(currency__id=currency.id).first()
+                if payment:
+                    row.append(payment.value)
+                    payment_total += payment.value if payment.currency.slug != 'usd' else payment.value*usd_value
+                else:
+                    row.append("0")
+
+            grand_total = total_mxn+concept_total
+            row.append(grand_total)
+            row.append(grand_total - payment_total)
+            row.append(b.notes)
+
+            writer.writerow(row)
     
+    upload_to_drive(request, file_name, file_path)
 
-    return response
+@login_required
+def upload_to_drive (request, file_name, file_path):
+    storage = Storage(models.CredentialsModel, 'id', request.user, 'credential')
+    credential = storage.get()
+    if credential is None or credential.invalid == True:
+        return redirect(reverse('config_view'))
+    
+    http = httplib2.Http()
+    http = credential.authorize(http)
+    service = build("drive", "v3", http=http)
 
-
+    file_metadata = {
+        'name' : file_name,
+        'mimeType' : 'application/vnd.google-apps.spreadsheet'
+    }
+    
+    media = MediaFileUpload(file_path, mimetype='text/csv', resumable=True)
+    file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    
 
 import_path = '%s/static/upload.csv' % os.path.dirname(os.path.abspath(__file__))
 @login_required
