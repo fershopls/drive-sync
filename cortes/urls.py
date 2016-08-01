@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     url(r'^$', views.home, name='index'),
     url(r'^config$', views.config_view, name='config_view'),
+    url(r'^config/access$', views.config_access, name='config_access'),
     
     url(r'^week/(?P<week_id>[0-9]+)$', views.week_view, name='week_view'),
     url(r'^week/export$', views.week_export, name='week_export'),

@@ -13,6 +13,11 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from . import models
+import httplib2
+from oauth2client import client
+from apiclient.discovery import build
+from oauth2client.contrib.django_util.storage import DjangoORMStorage as Storage
+from casalamat import settings
 
 if False:
     models.Concept.objects.create(name='Desayuno')
@@ -36,9 +41,47 @@ def accounts_login (request):
 def home (request):
     return redirect(reverse('week_view', kwargs={'week_id':datetime.now().strftime('%U')}))
 
+
+flow = client.flow_from_clientsecrets(settings.GOOGLE_OAUTH2_CLIENT_SECRETS_JSON,
+                                  scope='https://www.googleapis.com/auth/drive', 
+                                  redirect_uri='http://localhost:8000/config/access')
+
 @login_required
 def config_view (request):
-    return render(request, 'config.html', {})
+    storage = Storage(models.CredentialsModel, 'id', request.user, 'credential')
+    credential = storage.get()
+    if credential is None or credential.invalid == True:
+        drive_uri = flow.step1_get_authorize_url()
+        return render(request, 'config.html', {'oauth_drive_uri':drive_uri})
+    else:
+        http = httplib2.Http()
+        http = credential.authorize(http)
+        service = build("drive", "v3", http=http)
+        
+        results = service.files().list(
+            pageSize=10,fields="nextPageToken, files(id, name)").execute()
+        
+        items = results.get('files', [])
+        if not items:
+            print('No files found.')
+        else:
+            print('Files:')
+            for item in items:
+                print('{0} ({1})'.format(item['name'], item['id']))
+        
+        return JsonResponse(items)
+
+
+@login_required
+def config_access (request):
+    credential = flow.step2_exchange(request.REQUEST.get('code'))
+    storage = Storage(models.CredentialsModel, 'id', request.user, 'credential')
+    storage.put(credential)
+    return HttpResponseRedirect("/config")
+
+
+
+
     
 
 # Get Week by Date

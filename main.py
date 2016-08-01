@@ -15,7 +15,7 @@ credentials = flow.step2_exchange(code)
 http = httplib2.Http()
 http = credentials.authorize(http)
 
-service = discovery.build('drive', 'v3', http=http)
+service = build('drive', 'v3', http=http)
 
 
 res = {

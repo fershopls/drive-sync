@@ -1,5 +1,15 @@
 from django.db import models
 
+
+# Google api
+from django.contrib.auth.models import User
+from oauth2client.contrib.django_util.models import CredentialsField
+    
+class CredentialsModel(models.Model):
+    id = models.ForeignKey(User, primary_key=True)
+    credential = CredentialsField()
+
+
 # Create your models here.
 # Get Week by Date
 # datetime.date(2010, 6, 16).strftime("%V")
