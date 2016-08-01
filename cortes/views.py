@@ -180,7 +180,8 @@ def week_export (request):
 
             writer.writerow(row)
     
-    upload_to_drive(request, file_name, file_path)
+    id = upload_to_drive(request, file_name, file_path)
+    return HttpResponse(id)
 
 @login_required
 def upload_to_drive (request, file_name, file_path):
@@ -200,6 +201,7 @@ def upload_to_drive (request, file_name, file_path):
     
     media = MediaFileUpload(file_path, mimetype='text/csv', resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    return file.get('id')
     
 
 import_path = '%s/static/upload.csv' % os.path.dirname(os.path.abspath(__file__))
