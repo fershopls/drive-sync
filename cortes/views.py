@@ -114,8 +114,7 @@ def week_export (request):
     week_bookings = models.Booking.objects.filter(departure__range=[week_begin, week_end])
     
     # Create the HttpResponse object with the appropriate CSV header.
-    file_name = "W%s_%s.csv" % (week_id,week_end)
-    file_path = os.path.join(os.path.dirname(__file__), '..', file_name)
+    file_path = os.path.join(os.path.dirname(__file__), '..', "W%s_%s.csv" % (week_id,week_end))
 
     concepts = models.Concept.objects.all()
     currencies = models.Currency.objects.all()
@@ -181,13 +180,11 @@ def week_export (request):
 
             writer.writerow(row)
     
-    id = upload_to_drive(request, file_name, file_path)
-    return HttpResponse(id)
+    file_name = "W%s_%s" % (week_id,week_end)
 
-@login_required
-def upload_to_drive (request, file_name, file_path):
     storage = Storage(models.CredentialsModel, 'id', request.user, 'credential')
     credential = storage.get()
+    
     if credential is None or credential.invalid == True:
         return redirect(reverse('config_view'))
     
@@ -202,7 +199,8 @@ def upload_to_drive (request, file_name, file_path):
     
     media = MediaFileUpload(file_path, mimetype='text/csv', resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-    return file.get('id')
+    
+    return HttpResponse(file.get('id') + " | " + file_path)
     
 
 import_path = '%s/static/upload.csv' % os.path.dirname(os.path.abspath(__file__))
