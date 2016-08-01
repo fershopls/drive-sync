@@ -49,22 +49,61 @@
         </table>
        </div>
        <div class="one-half column">
-           <h4>Payments</h4>
-           {% for payment in booking.payment_set.all %}
-           <div class="success message header">
-               ${{ payment.value }} {{ payment.currency.slug }}
-           </div>
+           <h4 class="nm">Payments</h4>
+           <table class="u-full-width">
+           {% for payment in booking.get_payments %}
+               <tr>
+                   <th>{{ payment.currency.slug | upper }}</th>
+                   <td>${{ payment.value }}</td>
+               </tr>
            {% endfor %}
-           
-           <h4>Services</h4>
-           {% for service in booking.service_set.all %}
-           <div class="yellow message">
-                <div class="header">
-                    {{ service.concept.name }} #{{ service.folio }}
+           </table>
+           <form action="{% url 'do_booking_payment' book_nr=booking.book_nr %}" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="eight columns">
+                    <input name="payment_value" class='u-full-width' type="text" placeholder="New payment ammount">
                 </div>
-                ${{ service.value }} {{ service.currency.slug }}
-           </div>
+                <div class="four columns">
+                    <select name="payment_currency" class='u-full-width'>
+                        {% for c in currencies%}
+                        <option value="{{ c.slug }}">{{ c.slug | upper }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="twelve columns">
+                    <input class='u-full-width' type="submit">
+                </div>
+            </div>
+           </form>
+           
+           <h4 class="nm">Services</h4>
+           <table class="u-full-width">
+           {% for service in booking.get_services %}
+               <tr>
+                   <th>{{ service.concept.name }}</th>
+                   <td>${{ service.value }}</td>
+               </tr>
            {% endfor %}
+           </table>
+           <form action="{% url 'do_booking_service' book_nr=booking.book_nr %}" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="six columns">
+                    <input name="value" class='u-full-width' type="text" placeholder="New service cost">
+                </div>
+                <div class="six columns">
+                    <select name="concept_id" class='u-full-width'>
+                        {% for c in concepts %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="twelve columns">
+                    <input class='u-full-width' type="submit">
+                </div>
+            </div>
+           </form>
        </div>
    </div>
 </div>

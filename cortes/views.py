@@ -29,16 +29,28 @@ if False:
 
 # Create your views here.
 
+def accounts_login (request):
+    return redirect('/admin')
+
+@login_required
 def home (request):
-    return render(request, 'home.html', {})
+    return redirect(reverse('week_view', kwargs={'week_id':datetime.now().strftime('%U')}))
+
+@login_required
+def config_view (request):
+    return render(request, 'config.html', {})
+    
 
 # Get Week by Date
 # datetime.date(2010, 6, 16).strftime("%V")
 # Get Date by Week
 # datetime.strptime('2016:30-0', "%Y:%W-%w")
+# https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior
+# %U vs %W vs %V
+@login_required
 def week_view (request, week_id=None):
-    week_begin = datetime.strptime(timezone.now().strftime("%Y")+':'+week_id+'-0', "%Y:%W-%w")
-    week_end = datetime.strptime(timezone.now().strftime("%Y")+':'+str(int(week_id)+1)+'-0', "%Y:%W-%w")-timedelta(days=1)
+    week_begin = datetime.strptime(timezone.now().strftime("%Y")+':'+week_id+'-0', "%Y:%U-%w")
+    week_end = datetime.strptime(timezone.now().strftime("%Y")+':'+str(int(week_id)+1)+'-0', "%Y:%U-%w")-timedelta(days=1)
     week_begin = week_begin.strftime("%Y-%m-%d")
     week_end = week_end.strftime("%Y-%m-%d")
     
@@ -46,12 +58,13 @@ def week_view (request, week_id=None):
     
     return render(request, 'week_view.html', {'week_id': week_id, 'week_bookings': week_bookings})
 
+@login_required
 def week_export (request):
     week_id = request.POST.get('week_id')
     usd_value = float(request.POST.get('usd_value'))
     
-    week_begin = datetime.strptime(timezone.now().strftime("%Y")+':'+week_id+'-0', "%Y:%W-%w")
-    week_end = datetime.strptime(timezone.now().strftime("%Y")+':'+str(int(week_id)+1)+'-0', "%Y:%W-%w")-timedelta(days=1)
+    week_begin = datetime.strptime(timezone.now().strftime("%Y")+':'+week_id+'-0', "%Y:%U-%w")
+    week_end = datetime.strptime(timezone.now().strftime("%Y")+':'+str(int(week_id)+1)+'-0', "%Y:%U-%w")-timedelta(days=1)
     week_begin = week_begin.strftime("%Y-%m-%d")
     week_end = week_end.strftime("%Y-%m-%d")
     week_bookings = models.Booking.objects.filter(departure__range=[week_begin, week_end])
@@ -78,7 +91,7 @@ def week_export (request):
     for currency in currencies:
         headers.append(currency.slug.upper())
     
-    headers = headers + ["Gran Total", "Por Recibir"]
+    headers = headers + ["Gran Total", "Por Recibir","","Notas"]
     
     writer.writerow(headers)
     for b in week_bookings:
@@ -95,7 +108,7 @@ def week_export (request):
             b.commission,
             total_mxn,
             "",
-            b.folio if b.folio else "none"
+            b.folio
         ]
         concept_total = 0
         for concept in concepts:
@@ -119,6 +132,7 @@ def week_export (request):
         grand_total = total_mxn+concept_total
         row.append(grand_total)
         row.append(grand_total - payment_total)
+        row.append(b.notes)
         
         writer.writerow(row)
     
@@ -128,6 +142,7 @@ def week_export (request):
 
 
 import_path = '%s/static/upload.csv' % os.path.dirname(os.path.abspath(__file__))
+@login_required
 def import_process (request):
     if not os.path.isfile(import_path):
         return HttpResponse("No File")
@@ -184,6 +199,7 @@ def import_process (request):
                 
         return redirect("%s?bookings_sync=%s" % (reverse('import_success'), len(bookings_sync)))
 
+@login_required
 def import_view (request):
     if request.method == "POST":
         file_content = request.POST.get("content")
@@ -195,15 +211,68 @@ def import_view (request):
             return redirect(reverse('import_error'))
     return render(request, 'import_view.html', {})
 
+@login_required
 def import_success (request):
     return render(request, 'import_view.html', {'success':True, 'bookings_sync':request.GET.get('bookings_sync')})
 
+@login_required
 def import_error (request):
     return render(request, 'import_view.html', {'success':False})
 
+@login_required
 def booking_view (request, book_nr=None):
     booking = models.Booking.objects.filter(book_nr=book_nr).first()
     if not booking:
         return redirect(reverse('index'))
+    currencies = models.Currency.objects.all()
+    concepts = models.Concept.objects.all()
     
-    return render(request, 'booking_view.html', {'booking':booking})
+    return render(request, 'booking_view.html', {'booking':booking, 'currencies': currencies, 'concepts':concepts})
+
+@login_required
+def do_booking_payment (request, book_nr=None):
+    booking = models.Booking.objects.filter(book_nr=book_nr).first()
+    if not booking or request.method != "POST" or not request.POST.get('payment_value'):
+        return redirect(reverse('booking_view', kwargs={'book_nr':book_nr}))
+    
+    payment_value = int(request.POST.get('payment_value'))
+    payment_currency = request.POST.get('payment_currency')
+    
+    
+    booking_payment = booking.payment_set.filter(currency__slug=payment_currency).first()
+    
+    if booking_payment:
+        booking_payment.value = payment_value
+        booking_payment.save()
+    else:
+        currency = models.Currency.objects.filter(slug=payment_currency).first()
+        if not currency:
+            return redirect(reverse('index'))
+        
+        booking.payment_set.create(value=payment_value, currency=currency)
+    return redirect(reverse('booking_view', kwargs={'book_nr':book_nr}))
+
+@login_required
+def do_booking_service (request, book_nr=None):
+    booking = models.Booking.objects.filter(book_nr=book_nr).first()
+    if not booking or request.method != "POST" or not request.POST.get('value'):
+        return redirect(reverse('booking_view', kwargs={'book_nr':book_nr}))
+    
+    value = int(request.POST.get('value'))
+    concept_id = int(request.POST.get('concept_id'))
+    
+    
+    booking_service = booking.service_set.filter(concept__id=concept_id).first()
+    
+    if booking_service:
+        booking_service.value = payment_value
+        booking_service.save()
+    else:
+        concept = models.Concept.objects.filter(id=concept_id).first()
+        if not concept:
+            return redirect(reverse('index'))
+        
+        booking.service_set.create(value=value, concept=concept)
+    return redirect(reverse('booking_view', kwargs={'book_nr':book_nr}))
+    
+    

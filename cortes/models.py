@@ -19,10 +19,28 @@ class Booking (models.Model):
     commission = models.FloatField(default=0)
     
     folio = models.SmallIntegerField(blank=True, null=True)
-    internal_notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
     
     def __unicode__ (self):
         return "%s %s" % (self.book_nr, self.booker_name)
+    
+    def get_payments (self):
+        payments = []
+        for currency in Currency.objects.all():
+            p = self.payment_set.filter(currency__slug=currency.slug).first()
+            if not p:
+                p = {"currency":{"slug":currency.slug}, "value":0}
+            payments.append(p)
+        return payments
+    
+    def get_services (self):
+        services = []
+        for concept in Concept.objects.all():
+            s = self.service_set.filter(concept__id=concept.id).first()
+            if not s:
+                s = {"concept":{"name":concept.name}, "value":0}
+            services.append(s)
+        return services
     
 class Concept (models.Model):
     name = models.CharField(max_length=200)
@@ -39,7 +57,7 @@ class Currency (models.Model):
 class Service (models.Model):
     booking = models.ForeignKey(Booking)
     concept = models.ForeignKey(Concept)
-    currency = models.ForeignKey(Currency)
+    #currency = models.ForeignKey(Currency)
     value = models.SmallIntegerField()
     
     def __str__(self):

@@ -18,6 +18,9 @@ body {
 .nm {
   margin: 0 !important;
 }
+h1 {
+  font-size: 2.5em;
+}
 hr {
   border: 1px solid #e7e7e7;
   border-bottom: none;
